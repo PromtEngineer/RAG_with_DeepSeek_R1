@@ -27,7 +27,7 @@ This project implements a RAG system that:
 
 1. Clone the repository:
    ```
-   git clone <repository-url>
+   git clone https://github.com/PromtEngineer/RAG_with_DeepSeek_R1
    cd RAG_with_DeepSeek_R1
    ```
 
