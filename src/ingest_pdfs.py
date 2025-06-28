@@ -138,8 +138,8 @@ def main():
     data_dir = os.path.join(script_dir, "data")
     db_dir = os.path.join(script_dir, "chroma_db")
 
-    chunk_size = int(os.getenv("CHUNK_SIZE", 1000))
-    chunk_overlap = int(os.getenv("CHUNK_OVERLAP", 200))
+    chunk_size = int(os.getenv("CHUNK_SIZE", 1024))
+    chunk_overlap = int(os.getenv("CHUNK_OVERLAP", 100))
     use_contextual_retrieval = os.getenv("USE_CONTEXTUAL_RETRIEVAL", "true").lower() == "true"
 
     logging.info("Loading and processing PDFs...")

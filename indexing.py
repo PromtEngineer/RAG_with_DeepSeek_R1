@@ -20,7 +20,7 @@ def load_pdf_documents(data_dir='data'):
     return documents
 
 # 2. Chunk documents (simple chunking by page for now, can be improved)
-def chunk_documents(documents, chunk_size=500, chunk_overlap=50):
+def chunk_documents(documents, chunk_size=1024, chunk_overlap=100):
     chunks = []
     for doc in documents:
         content = doc["content"]

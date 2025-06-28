@@ -16,7 +16,7 @@ class ContextualRetrieval:
     def __init__(self, cache_file: str = "contextual_cache.json"):
         self.groq_api_key = os.environ.get("GROQ_API_KEY")
         self.groq_api_base_url = "https://api.groq.com/openai/v1"
-        self.model_name = "deepseek-r1-distill-llama-70b"
+        self.model_name = "llama-3.3-70b-versatile"
         self.cache_file = cache_file
         self.cache = self._load_cache()
         
