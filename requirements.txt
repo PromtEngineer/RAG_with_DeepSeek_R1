@@ -8,3 +8,6 @@ streamlit
 tqdm
 hnswlib
 smolagents
+faiss-cpu
+openai
+numpy

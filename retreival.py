@@ -9,9 +9,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- Configuration ---
-MODEL_NAME = os.environ.get("MODEL_NAME")
-SAMBANOVA_API_KEY = os.environ.get("SAMBANOVA_API_KEY")
-SAMBANOVA_API_BASE_URL = os.environ.get("SAMBANOVA_API_BASE_URL")
+MODEL_NAME = "deepseek-r1-distill-llama-70b"
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+GROQ_API_BASE_URL = "https://api.groq.com/openai/v1"
 
 # --- Load Resources ---
 embeddings = np.load("embeddings.npy")
@@ -48,8 +48,8 @@ def query_rag_system(query_text, index, embeddings, chunks, embedding_model): # 
     '\n\nContext:\n{context}\n\nQuestion: {query_text}"""
 
     client = OpenAI(
-        base_url=SAMBANOVA_API_BASE_URL, 
-        api_key=SAMBANOVA_API_KEY,
+        base_url=GROQ_API_BASE_URL, 
+        api_key=GROQ_API_KEY,
     )
 
     completion = client.chat.completions.create( # Using openai library directly
@@ -68,6 +68,6 @@ if __name__ == '__main__':
             break
 
         response = query_rag_system(user_query, index, embeddings, chunks, embedding_model) # Removed llm_agent parameter
-        print(f"\n--- Response from {MODEL_NAME} (via SambaNova) ---")
+        print(f"\n--- Response from {MODEL_NAME} (via Groq) ---")
         print(response)
         print("\n" + "-"*50 + "\n")

@@ -1,18 +1,18 @@
 # RAG with DeepSeek-R1
 
-A Retrieval-Augmented Generation (RAG) system using DeepSeek-R1 LLM via SambaNova API to answer questions based on PDF documents.
+A Retrieval-Augmented Generation (RAG) system using deepseek-r1-distill-llama-70b LLM via Groq API to answer questions based on PDF documents.
 
 ## Overview
 
 This project implements a RAG system that:
 1. Indexes PDF documents by extracting text, chunking it, and creating vector embeddings
 2. Retrieves relevant document chunks based on semantic similarity to user queries
-3. Augments prompts with the retrieved context and uses DeepSeek-R1 to generate accurate answers
+3. Augments prompts with the retrieved context and uses deepseek-r1-distill-llama-70b (via Groq API) to generate accurate answers
 
 ## Components
 
 - **Indexing System** (`indexing.py`): Processes PDF documents, chunks text, and builds a FAISS vector index
-- **Retrieval System** (`retreival.py`): Handles user queries, retrieves relevant context, and generates answers using DeepSeek-R1
+- **Retrieval System** (`retreival.py`): Handles user queries, retrieves relevant context, and generates answers using deepseek-r1-distill-llama-70b via Groq API
 
 ## Requirements
 
@@ -36,11 +36,10 @@ This project implements a RAG system that:
    pip install pypdf sentence-transformers faiss-cpu numpy openai python-dotenv
    ```
 
-3. Create a `.env` file with your SambaNova API credentials:
+3. Create a `.env` file with your Groq API credentials:
    ```
-   SAMBANOVA_API_KEY=your_api_key
-   SAMBANOVA_API_BASE_URL=https://api.sambanova.ai/v1
-   MODEL_NAME=DeepSeek-R1
+   GROQ_API_KEY=your_groq_api_key
+   MODEL_NAME=deepseek-r1-distill-llama-70b
    ```
 
 4. Create a `data` directory and add your PDF documents:
@@ -78,7 +77,7 @@ This project implements a RAG system that:
    - User query is encoded using the same embedding model
    - Similar document chunks are retrieved using FAISS
    - Retrieved context is combined with the query in a prompt
-   - DeepSeek-R1 generates a response based on the context
+   - deepseek-r1-distill-llama-70b (via Groq API) generates a response based on the context
 
 ## Customization
 

@@ -1,0 +1,169 @@
+# RAG with DeepSeek-R1 System Flowchart
+
+## Main RAG System Architecture
+
+### INDEXING PHASE (Offline Processing)
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   PDF Files     │───▶│  PyPDF Reader   │───▶│  Text Content   │
+│   (/data dir)   │    │  Extract Text   │    │  (All Pages)    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                                        │
+                                                        ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Text Chunks    │◀───│  Sliding Window │◀───│  Raw Text Data  │
+│  (500 chars,    │    │  Chunking       │    │                 │
+│   50 overlap)   │    │                 │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │
+         ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Vector Embeddings│◀───│ SentenceTransf. │    │  FAISS Index    │
+│ (768 dimensions)│    │ all-mpnet-base  │───▶│  (L2 Distance)  │
+│                 │    │                 │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                                              │
+         ▼                                              ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ embeddings.npy  │    │   chunks.json   │    │faiss_index.index│
+│ (Saved Vectors) │    │ (Text + Meta)   │    │ (Search Index)  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### RETRIEVAL PHASE (Runtime Processing)
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   User Query    │───▶│ Query Embedding │───▶│ FAISS Similarity│
+│ "What is X?"    │    │ (Same Model)    │    │ Search (Top 20) │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                                        │
+                                                        ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Retrieved Context│◀───│ Combine Chunks  │◀───│ Relevant Chunks │
+│ (Formatted Text)│    │ Format for LLM  │    │ (From Index)    │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │
+         ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Augmented Prompt│───▶│ SambaNova API   │───▶│   DeepSeek-R1   │
+│Context + Query +│    │   Gateway       │    │  Language Model │
+│  Instructions   │    │                 │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                                        │
+                                                        ▼
+                              ┌─────────────────┐
+                              │ Generated Answer│
+                              │ (Contextually   │
+                              │   Relevant)     │
+                              └─────────────────┘
+```
+
+## Alternative Implementations
+
+### ChromaDB Implementation (src/ingest_pdfs.py)
+```
+PDF Files ──▶ LangChain DirectoryLoader ──▶ RecursiveCharacterTextSplitter
+    │                                              │
+    │                                              ▼
+    │                                    ┌─────────────────┐
+    │                                    │ HuggingFace     │
+    │                                    │ Embeddings      │
+    │                                    │ all-mpnet-base  │
+    │                                    └─────────────────┘
+    │                                              │
+    │                                              ▼
+    │                                    ┌─────────────────┐
+    │                                    │   ChromaDB      │
+    │                                    │ Vector Store    │
+    │                                    │ (Persistent)    │
+    │                                    └─────────────────┘
+    │                                              │
+    └──────────────────────────────────────────────┘
+                                                   │
+                                                   ▼
+                                         Query ──▶ Similarity Search ──▶ Context
+```
+
+### Agent-Based RAG (src/r1_smolagent_rag.py)
+```
+User Query ──▶ Primary ToolCallingAgent (GPT-3.5) ──▶ RAG Tool Function
+                                │                           │
+                                │                           ▼
+                                │                  ChromaDB Search (Top 3)
+                                │                           │
+                                │                           ▼
+                                │                  Context Assembly
+                                │                           │
+                                │                           ▼
+                                └──▶ Reasoning Agent (DeepSeek-R1 CodeAgent)
+                                                    │
+                                                    ▼
+                                            Generated Response
+                                                    │
+                                                    ▼
+                                             Gradio UI Display
+```
+
+### Streamlit Web Interface Flow
+```
+Streamlit Web UI ──▶ User Input ──▶ Chat History Management
+        │                                    │
+        │                                    ▼
+        │                           Primary Agent Call
+        │                                    │
+        │                                    ▼
+        │                           RAG Tool Execution
+        │                                    │
+        │                                    ▼
+        │                           Response Generation
+        │                                    │
+        │                                    ▼
+        └──────────────────────────▶ Update Chat Display
+                                             │
+                                             ▼
+                                    Session State Storage
+```
+
+## Complete Data Flow Summary
+
+### Offline Processing (Indexing)
+```
+PDF Documents → Text Extraction → Text Chunking → Vector Embeddings → FAISS Index
+     ↓               ↓                ↓               ↓                ↓
+  Raw Files    Page Content    Sliding Window   SentenceTransf.   Similarity DB
+```
+
+### Runtime Processing (Retrieval)
+```
+User Query → Query Embedding → Similarity Search → Context Retrieval → LLM Processing → Response
+     ↓             ↓                ↓                    ↓                ↓             ↓
+Natural Lang.  Vector Rep.     FAISS Search      Relevant Chunks    DeepSeek-R1    Final Answer
+```
+
+## Key Technical Components
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           TECHNICAL STACK OVERVIEW                             │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ PDF Processing:     PyPDF (text extraction)                                    │
+│ Text Chunking:      Sliding window (500 chars, 50 overlap)                     │
+│ Embeddings:         sentence-transformers/all-mpnet-base-v2 (768 dimensions)   │
+│ Vector Search:      FAISS with L2 distance / ChromaDB (alternatives)           │
+│ LLM:               DeepSeek-R1 via SambaNova API                               │
+│ Agent Framework:    SmolagentS (for agent-based implementations)               │
+│ User Interfaces:    CLI, Streamlit, Gradio                                     │
+│ Alternative Tools:  LangChain (document loading), RecursiveCharacterTextSplit  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+## Implementation Comparison
+
+┌─────────────────┬─────────────────┬─────────────────┬─────────────────┐
+│   Component     │ Main (Root)     │ ChromaDB Ver.   │ Agent-Based     │
+├─────────────────┼─────────────────┼─────────────────┼─────────────────┤
+│ Vector Store    │ FAISS           │ ChromaDB        │ ChromaDB        │
+│ Doc Loading     │ PyPDF           │ LangChain       │ LangChain       │
+│ Text Splitting  │ Sliding Window  │ Recursive Split │ Recursive Split │
+│ Agent Framework │ Direct API      │ None            │ SmolagentS      │
+│ UI              │ Command Line    │ None            │ Gradio/Streamlit│
+│ Chunking        │ 500/50          │ 1000/200        │ Variable        │
+└─────────────────┴─────────────────┴─────────────────┴─────────────────┘
