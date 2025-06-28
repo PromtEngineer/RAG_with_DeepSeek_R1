@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG System Flowchart - Simple Version</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: #444;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        .phase {
+            background: #f8f9fa;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .indexing {
+            border-left-color: #007bff;
+        }
+        .retrieval {
+            border-left-color: #6f42c1;
+        }
+        .flow-step {
+            display: inline-block;
+            background: #e9ecef;
+            padding: 15px 20px;
+            margin: 10px;
+            border-radius: 10px;
+            border: 2px solid #dee2e6;
+            min-width: 150px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .arrow {
+            display: inline-block;
+            margin: 0 10px;
+            font-size: 1.5em;
+            color: #666;
+        }
+        .step-indexing {
+            background: #cce5ff;
+            border-color: #007bff;
+        }
+        .step-retrieval {
+            background: #e6ccff;
+            border-color: #6f42c1;
+        }
+        .step-storage {
+            background: #ccffcc;
+            border-color: #28a745;
+        }
+        .step-llm {
+            background: #ffe6cc;
+            border-color: #fd7e14;
+        }
+        .tech-stack {
+            background: #f1f3f4;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .tech-item {
+            display: inline-block;
+            background: white;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            font-size: 0.9em;
+        }
+        .flow-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .implementation-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .implementation-table th,
+        .implementation-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .implementation-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .implementation-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 RAG with DeepSeek-R1 System Architecture</h1>
+        
+        <div class="phase indexing">
+            <h2>📚 Phase 1: Indexing (Offline Processing)</h2>
+            <div class="flow-container">
+                <div class="flow-step step-indexing">📄 PDF Documents<br/><small>/data directory</small></div>
+                <span class="arrow">→</span>
+                <div class="flow-step step-indexing">🔍 PyPDF Reader<br/><small>Extract Text</small></div>
+                <span class="arrow">→</span>
+                <div class="flow-step step-indexing">✂️ Text Chunking<br/><small>500 chars, 50 overlap</small></div>
+                <br/>
+                <span class="arrow">↓</span>
+                <br/>
+                <div class="flow-step step-indexing">🧠 Generate Embeddings<br/><small>SentenceTransformers</small></div>
+                <span class="arrow">→</span>
+                <div class="flow-step step-indexing">🗂️ FAISS Index<br/><small>L2 Distance</small></div>
+                <span class="arrow">→</span>
+                <div class="flow-step step-storage">💾 Save to Disk<br/><small>embeddings.npy<br/>faiss_index.index<br/>chunks.json</small></div>
+            </div>
+        </div>
+
+        <div class="phase retrieval">
+            <h2>🔍 Phase 2: Retrieval (Runtime Processing)</h2>
+            <div class="flow-container">
+                <div class="flow-step step-retrieval">❓ User Query<br/><small>"What is X?"</small></div>
+                <span class="arrow">→</span>
+                <div class="flow-step step-retrieval">🔤 Query Embedding<br/><small>Same Model</small></div>
+                <span class="arrow">→</span>
+                <div class="flow-step step-retrieval">🔍 FAISS Search<br/><small>Top 20 Chunks</small></div>
+                <br/>
+                <span class="arrow">↓</span>
+                <br/>
+                <div class="flow-step step-retrieval">📋 Context Assembly<br/><small>Format for LLM</small></div>
+                <span class="arrow">→</span>
+                <div class="flow-step step-retrieval">📝 Augmented Prompt<br/><small>Context + Query</small></div>
+                <span class="arrow">→</span>
+                <div class="flow-step step-llm">🤖 DeepSeek-R1<br/><small>via SambaNova API</small></div>
+                <br/>
+                <span class="arrow">↓</span>
+                <br/>
+                <div class="flow-step step-retrieval">✅ Generated Response<br/><small>Contextually Relevant</small></div>
+            </div>
+        </div>
+
+        <h2>🛠️ Technical Stack</h2>
+        <div class="tech-stack">
+            <div class="tech-item">📄 PyPDF (PDF Processing)</div>
+            <div class="tech-item">🧠 SentenceTransformers (Embeddings)</div>
+            <div class="tech-item">🗂️ FAISS (Vector Search)</div>
+            <div class="tech-item">🗄️ ChromaDB (Alternative)</div>
+            <div class="tech-item">🤖 DeepSeek-R1 (LLM)</div>
+            <div class="tech-item">🔗 SambaNova API</div>
+            <div class="tech-item">🛠️ SmolagentS (Agents)</div>
+            <div class="tech-item">🖥️ Streamlit (Web UI)</div>
+            <div class="tech-item">🎛️ Gradio (Interactive UI)</div>
+            <div class="tech-item">🔗 LangChain (Document Processing)</div>
+        </div>
+
+        <h2>📊 Implementation Comparison</h2>
+        <table class="implementation-table">
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Main Implementation</th>
+                    <th>ChromaDB Version</th>
+                    <th>Agent-Based</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Vector Store</strong></td>
+                    <td>FAISS</td>
+                    <td>ChromaDB</td>
+                    <td>ChromaDB</td>
+                </tr>
+                <tr>
+                    <td><strong>Document Loading</strong></td>
+                    <td>PyPDF</td>
+                    <td>LangChain</td>
+                    <td>LangChain</td>
+                </tr>
+                <tr>
+                    <td><strong>Text Splitting</strong></td>
+                    <td>Sliding Window</td>
+                    <td>RecursiveCharacterTextSplitter</td>
+                    <td>RecursiveCharacterTextSplitter</td>
+                </tr>
+                <tr>
+                    <td><strong>Agent Framework</strong></td>
+                    <td>Direct API calls</td>
+                    <td>None</td>
+                    <td>SmolagentS</td>
+                </tr>
+                <tr>
+                    <td><strong>User Interface</strong></td>
+                    <td>Command Line</td>
+                    <td>None</td>
+                    <td>Gradio/Streamlit</td>
+                </tr>
+                <tr>
+                    <td><strong>Chunk Size</strong></td>
+                    <td>500 chars, 50 overlap</td>
+                    <td>1000 chars, 200 overlap</td>
+                    <td>Configurable</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>🔄 Data Flow Summary</h2>
+        <div class="phase">
+            <p><strong>📥 Offline (Indexing):</strong> PDF → Text → Chunks → Embeddings → Vector Database</p>
+            <p><strong>🔄 Runtime (Retrieval):</strong> Query → Embedding → Search → Context → LLM → Response</p>
+        </div>
+
+        <h2>🎯 Key Features</h2>
+        <div class="tech-stack">
+            <div class="tech-item">🔄 Multiple Implementation Approaches</div>
+            <div class="tech-item">⚙️ Configurable Chunking</div>
+            <div class="tech-item">🔍 Semantic Search</div>
+            <div class="tech-item">🧠 Context-Aware Responses</div>
+            <div class="tech-item">🖥️ Multiple User Interfaces</div>
+            <div class="tech-item">🤖 Agent Integration</div>
+        </div>
+    </div>
+</body>
+</html>
