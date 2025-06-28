@@ -4,6 +4,7 @@ import hashlib
 from typing import List, Dict, Any, Optional
 from openai import OpenAI
 from dotenv import load_dotenv
+from tqdm import tqdm
 
 load_dotenv()
 
@@ -88,34 +89,115 @@ Please give a short succinct context to situate this chunk within the overall do
             print(f"Warning: Failed to generate contextual summary: {e}")
             return ""
     
-    def enhance_chunks_with_context(self, chunks: List[Dict[str, Any]], document_content: str) -> List[Dict[str, Any]]:
+    def _generate_contextual_summaries_batch(self, document_content: str, chunk_contents: List[str]) -> List[str]:
+        """Generate contextual summaries for multiple chunks in a single API call."""
+        if not chunk_contents:
+            return []
+        
+        batch_prompt = f"""<document>
+{document_content}
+</document>
+
+I will provide you with multiple chunks from this document. For each chunk, provide a short succinct context to situate it within the overall document for the purposes of improving search retrieval. 
+
+Respond with exactly {len(chunk_contents)} contextual summaries, one per line, in the same order as the chunks provided. Each line should contain only the contextual summary and nothing else.
+
+"""
+        
+        for i, chunk_content in enumerate(chunk_contents, 1):
+            batch_prompt += f"""
+Chunk {i}:
+<chunk>
+{chunk_content}
+</chunk>
+"""
+        
+        try:
+            completion = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "user", "content": batch_prompt}
+                ],
+                max_tokens=150 * len(chunk_contents),
+                temperature=0.1
+            )
+            
+            response_text = completion.choices[0].message.content.strip()
+            summaries = [line.strip() for line in response_text.split('\n') if line.strip()]
+            
+            if len(summaries) != len(chunk_contents):
+                print(f"Warning: Expected {len(chunk_contents)} summaries, got {len(summaries)}. Falling back to individual calls.")
+                return []
+            
+            return summaries
+            
+        except Exception as e:
+            print(f"Warning: Failed to generate batch contextual summaries: {e}")
+            return []
+    
+    def enhance_chunks_with_context(self, chunks: List[Dict[str, Any]], document_content: str, batch_size: int = 5) -> List[Dict[str, Any]]:
         """
         Enhance chunks with contextual summaries using sliding window approach.
         
         Args:
             chunks: List of chunk dictionaries with 'filename' and 'chunk' keys
             document_content: Full document content for context generation
+            batch_size: Number of chunks to process in a single API call
             
         Returns:
             List of enhanced chunks with contextual summaries prepended
         """
         enhanced_chunks = []
         
+        chunks_needing_summaries = []
+        chunk_cache_keys = []
+        
+        print(f"Checking cache for {len(chunks)} chunks...")
         for i, chunk_data in enumerate(chunks):
             chunk_content = chunk_data["chunk"]
-            
             window_chunks = self._get_sliding_window(chunks, i)
-            
             cache_key = self._get_cache_key(document_content, chunk_content, window_chunks)
+            chunk_cache_keys.append(cache_key)
             
-            if cache_key in self.cache:
-                contextual_summary = self.cache[cache_key]
-            else:
-                contextual_summary = self._generate_contextual_summary(document_content, chunk_content)
+            if cache_key not in self.cache:
+                chunks_needing_summaries.append((i, chunk_content))
+        
+        print(f"Found {len(chunks_needing_summaries)} chunks needing contextual summaries")
+        
+        if chunks_needing_summaries:
+            print(f"Generating contextual summaries in batches of {batch_size}...")
+            
+            with tqdm(total=len(chunks_needing_summaries), desc="Generating contextual summaries") as pbar:
+                for batch_start in range(0, len(chunks_needing_summaries), batch_size):
+                    batch_end = min(batch_start + batch_size, len(chunks_needing_summaries))
+                    batch_chunks = chunks_needing_summaries[batch_start:batch_end]
+                    
+                    batch_contents = [chunk_content for _, chunk_content in batch_chunks]
+                    
+                    batch_summaries = self._generate_contextual_summaries_batch(document_content, batch_contents)
+                    
+                    if len(batch_summaries) != len(batch_contents):
+                        print(f"Batch processing failed for batch {batch_start//batch_size + 1}, falling back to individual calls...")
+                        batch_summaries = []
+                        for _, chunk_content in batch_chunks:
+                            summary = self._generate_contextual_summary(document_content, chunk_content)
+                            batch_summaries.append(summary)
+                    
+                    for (chunk_idx, _), summary in zip(batch_chunks, batch_summaries):
+                        if summary:
+                            cache_key = chunk_cache_keys[chunk_idx]
+                            self.cache[cache_key] = summary
+                    
+                    pbar.update(len(batch_chunks))
                 
-                if contextual_summary:
-                    self.cache[cache_key] = contextual_summary
-                    self._save_cache()
+                self._save_cache()
+        
+        print("Building enhanced chunks...")
+        for i, chunk_data in enumerate(tqdm(chunks, desc="Processing chunks")):
+            chunk_content = chunk_data["chunk"]
+            cache_key = chunk_cache_keys[i]
+            
+            contextual_summary = self.cache.get(cache_key, "")
             
             if contextual_summary:
                 enhanced_chunk_content = f"{contextual_summary} {chunk_content}"
