@@ -1,18 +1,18 @@
 # RAG with DeepSeek-R1
 
-A Retrieval-Augmented Generation (RAG) system using DeepSeek-R1 LLM via Groq API to answer questions based on PDF documents.
+A Retrieval-Augmented Generation (RAG) system using deepseek-r1-distill-llama-70b LLM via Groq API to answer questions based on PDF documents.
 
 ## Overview
 
 This project implements a RAG system that:
 1. Indexes PDF documents by extracting text, chunking it, and creating vector embeddings
 2. Retrieves relevant document chunks based on semantic similarity to user queries
-3. Augments prompts with the retrieved context and uses DeepSeek-R1 (via Groq API) to generate accurate answers
+3. Augments prompts with the retrieved context and uses deepseek-r1-distill-llama-70b (via Groq API) to generate accurate answers
 
 ## Components
 
 - **Indexing System** (`indexing.py`): Processes PDF documents, chunks text, and builds a FAISS vector index
-- **Retrieval System** (`retreival.py`): Handles user queries, retrieves relevant context, and generates answers using DeepSeek-R1 via Groq API
+- **Retrieval System** (`retreival.py`): Handles user queries, retrieves relevant context, and generates answers using deepseek-r1-distill-llama-70b via Groq API
 
 ## Requirements
 
@@ -77,7 +77,7 @@ This project implements a RAG system that:
    - User query is encoded using the same embedding model
    - Similar document chunks are retrieved using FAISS
    - Retrieved context is combined with the query in a prompt
-   - DeepSeek-R1 (via Groq API) generates a response based on the context
+   - deepseek-r1-distill-llama-70b (via Groq API) generates a response based on the context
 
 ## Customization
 
