@@ -83,36 +83,41 @@ def stream_response(prompt):
     except Exception as e:
         yield f"❌ Error generating response: {str(e)}"
 
-def display_source_chunks(chunks):
+def display_source_chunks(chunks, message_id=None):
     """Display retrieved source chunks in an organized way."""
     st.subheader("📚 Source Documents")
     
     for chunk in chunks:
+        st.session_state.chunk_counter += 1
+        unique_id = st.session_state.chunk_counter
+        
         with st.expander(f"📄 Document {chunk['rank']} - {chunk['filename']} (Score: {chunk['similarity_score']:.4f})"):
             if 'original_chunk' in chunk:
                 st.markdown("**Original Content:**")
-                st.text_area("", chunk['original_chunk'], height=150, key=f"original_{chunk['rank']}")
+                st.text_area("Original Content", chunk['original_chunk'], height=150, key=f"original_{unique_id}", label_visibility="collapsed")
                 
                 if 'contextual_summary' in chunk and chunk['contextual_summary']:
                     st.markdown("**Contextual Summary:**")
                     st.info(chunk['contextual_summary'])
             else:
                 st.markdown("**Content:**")
-                st.text_area("", chunk['chunk'], height=150, key=f"chunk_{chunk['rank']}")
+                st.text_area("Content", chunk['chunk'], height=150, key=f"chunk_{unique_id}", label_visibility="collapsed")
 
 def init_session_state():
     """Initialize session state variables."""
     if "messages" not in st.session_state:
         st.session_state.messages = []
+    if "chunk_counter" not in st.session_state:
+        st.session_state.chunk_counter = 0
 
 def display_chat_history():
     """Display chat history."""
-    for message in st.session_state.messages:
+    for i, message in enumerate(st.session_state.messages):
         with st.chat_message(message["role"]):
             if message["role"] == "assistant" and "chunks" in message:
                 st.markdown(message["content"])
                 with st.expander("View Source Documents"):
-                    display_source_chunks(message["chunks"])
+                    display_source_chunks(message["chunks"], message_id=i)
             else:
                 st.markdown(message["content"])
 
